@@ -110,7 +110,8 @@
 
     <script>
     let globalKemei = ''; // グローバル変数としてkemeiを宣言
-
+    const API_KEY = ''; // この行は GitHub Actions によって置き換えられます
+    
     document.addEventListener('DOMContentLoaded', () => {
         new Vue({
             el: '#app',
@@ -195,7 +196,7 @@
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': secrets.VUE_APP_C_API_KEY
+        'x-api-key': API_KEY
       },
       body: JSON.stringify({
         model: "claude-2",
