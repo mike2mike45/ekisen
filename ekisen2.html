@@ -121,6 +121,7 @@
                 URLdata: '',
                 info: null,
                 info2: null,
+                answer: '',
                 message: '',
                 apiResult: '',
                 koudat: 0,
@@ -172,7 +173,7 @@
                     }
                 },
                 fetchData() {
-                    axios.get('datas_ke.json')
+                    axios.get('./datas_ke.json')
                         .then(response => {
                             this.info = response.data[this.ke];
                             this.info2 = response.data[this.henke];
