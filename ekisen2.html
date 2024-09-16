@@ -111,7 +111,7 @@
     <script>
     let globalKemei = ''; // グローバル変数としてkemeiを宣言
     const API_KEY = ''; // この行は GitHub Actions によって置き換えられます
-    
+
     document.addEventListener('DOMContentLoaded', () => {
         new Vue({
             el: '#app',
@@ -192,7 +192,7 @@
                 },
                 async callApi() {
   try {
-    const response = await fetch('https://api.anthropic.com/v1/completions', {
+    const response = await fetch('https://cors-anywhere.herokuapp.com/https://api.anthropic.com/v1/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
