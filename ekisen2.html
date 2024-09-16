@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>易占</title>
+    <style>
+        body {
+            font: 300 15px/1.625 'ヒラギノ角ゴ Pro W3','Hiragino Kaku Gothic Pro W3','メイリオ','ＭＳ Ｐゴシック',sans-serif,arial,helvetica,clean;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            border-bottom: 2px solid #94dbc6;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+        textarea {
+            width: 100%; /* 親要素の幅に合わせる */
+            max-width: 100%; /* 最大幅を親要素に合わせる */
+            min-height: 100px; /* 最小の高さを設定 */
+            resize: vertical; /* 垂直方向のリサイズのみ許可 */
+        }
+        .url-copy {
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .kekka {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(3, 8, 6, 0.959);
+            margin-bottom: 20px;
+        }
+        .keji, .kou {
+            margin-bottom: 15px;
+        }
+        .setumei {
+            font-style: italic;
+            color: #666;
+        }
+        .center-text {
+            text-align: center;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>易占しました</h1>
+        <div>
+            <input type="text" id="urlInput" v-model="URLdata" readonly style="width: 100%; padding: 5px; margin-bottom: 5px;">
+            <button type="button" @click="copyURL">URLのコピー</button>
+            <br>
+            <span>上記のURLをメモ帳などにコピペしておくと後でこの卦が見れるようになります</span>
+        </div>
+        <br>
+        <canvas id="myCanvas1" width="60" height="60"></canvas>
+
+        <div v-if="info">
+            <h1>本卦　{{ info.kemei }}の{{ koudat }}爻</h1>        
+            <p>[卦辞] {{ info.keji }}</p>
+            <ol>
+              <div v-for="i in 6">
+                <li v-if="i === koudat" style='color:#FF0000'>{{ info.kou[i-1] }}</li>
+                <li v-else style='color:#000000'>{{ info.kou[i-1] }}</li>
+              </div>
+            </ol>
+        
+            <p>[説明] {{ info.setumei }}</p>
+        </div><br>
+        <canvas id="myCanvas2" width="60" height="60"></canvas> 
+        <div v-if="info2">
+            <h1>変卦 {{ info2.kemei }}の{{ koudat2 }}爻</h1>               
+            <p>[卦辞] {{ info2.keji }}</p>
+            <ol>
+              <div v-for="i in 6">
+                <li v-if="i === koudat2" style='color:#FF0000'>{{ info2.kou[i-1] }}</li>
+                <li v-else style='color:#000000'>{{ info2.kou[i-1] }}</li>
+              </div>
+            </ol>
+            <p>[説明] {{ info2.setumei }}</p>
+        </div>
+        <p></p>
+        AIでこの結果を解説します。下のテキストエリアに占いたいことを書いてボタンを押してください。<br>
+        なお、変更するのは「（占いたいこと）」の部分だけで、あとはそのままでお願いします。
+        <br>
+        <textarea v-model="message" cols=100></textarea>
+        <br>
+        <button type="button" @click="callApi">AIで解説する</button>
+        <div v-if="answer">
+            <h3>Claudeの回答:</h3>
+            <p>{{ answer }}</p>
+          </div>
+    </div>
+
+    <script>
+    let globalKemei = ''; // グローバル変数としてkemeiを宣言
+
+    document.addEventListener('DOMContentLoaded', () => {
+        new Vue({
+            el: '#app',
+            data: {
+                ke: '',
+                henke: '',
+                kou: 0,
+                URLdata: '',
+                info: null,
+                info2: null,
+                message: '',
+                apiResult: '',
+                koudat: 0,
+                koudat2: 0
+            },
+            created() {
+                const params = new URL(document.location).searchParams;
+                this.ke = params.get('ke') || this.generateKe();
+                this.kou = params.get('kou') || this.generateKou();
+                this.URLdata = `https://mike2mike.xyz/ekisen.html?ke=${this.ke}&kou=${this.kou}`;
+                this.henke = this.generateHenke();
+                this.koudat = Number(this.kou) + 1;
+                this.koudat2 = this.koudat;
+            },
+            mounted() {
+                this.fetchData();
+            },
+            methods: {
+                generateKe() {
+                    return Array(6).fill().map(() => Math.round(Math.random())).join('');
+                },
+                generateKou() {
+                    return 5 - Math.round(Math.random() * 5);
+                },
+                generateHenke() {
+                    return this.ke.split('').map((v, i) => 
+                        i === 5 - this.kou ? (v === '0' ? '1' : '0') : v
+                    ).join('');
+                },
+                drawCanvas() {
+                    this.drawCanvasElement('myCanvas1', this.ke);
+                    this.drawCanvasElement('myCanvas2', this.henke);
+                },
+                drawCanvasElement(canvasId, keValue) {
+                    const canvas = document.getElementById(canvasId);
+                    if (canvas) {
+                        const ctx = canvas.getContext("2d");
+                        ctx.beginPath();
+                        keValue.split('').forEach((v, i) => {
+                            ctx.fillStyle = i === 5 - this.kou ? "#FF0000" : "#000000";
+                            if (v === '0') {
+                                ctx.fillRect(0, i * 10, 60, 7);
+                            } else {
+                                ctx.fillRect(0, i * 10, 28, 7);
+                                ctx.fillRect(32, i * 10, 28, 7);
+                            }
+                        });
+                        ctx.closePath();
+                    }
+                },
+                fetchData() {
+                    axios.get('https://mike2mike.xyz/datas_ke.json')
+                        .then(response => {
+                            this.info = response.data[this.ke];
+                            this.info2 = response.data[this.henke];
+                            if (this.info) {
+                                globalKemei = this.info.kemei; // グローバル変数を更新
+                            }
+                            this.$nextTick(() => {
+                                this.drawCanvas();
+                                this.setInitialMessage(); // fetchDataの後に呼び出す
+                            });
+                        });
+                },
+                setInitialMessage() {
+                    this.message = `あなたは優秀な易者です。${globalKemei}の${this.koudat}爻という卦が出ました。（占いたいこと）について判断をお願いします`;
+                },
+                async callApi() {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': secrets.VUE_APP_C_API_KEY
+      },
+      body: JSON.stringify({
+        model: "claude-2",
+        prompt: this.message,
+        max_tokens_to_sample: 300
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('API request failed');
+    }
+
+    const data = await response.json();
+    this.answer = data.completion;
+  } catch (error) {
+    console.error('Error calling Claude API:', error);
+    this.answer = 'エラーが発生しました。もう一度お試しください。';
+  }
+},
+                copyURL() {
+                    navigator.clipboard.writeText(this.URLdata).then(() => {
+                        alert('URLをクリップボードにコピーしました。');
+                    }).catch(err => {
+                        console.error('URLのコピーに失敗しました:', err);
+                    });
+                }
+            }
+        });
+    });
+    </script>
+</body>
+</html>
