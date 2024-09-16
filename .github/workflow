@@ -33,9 +33,11 @@ jobs:
         run: npm install axios vue
 
       - name: Process ekisen2.html
+        env:
+          VUE_APP_C_API_KEY: ${{ secrets.VUE_APP_C_API_KEY }}
         run: |
           sed -i 's|https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js|https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js|g' ekisen2.html
-          sed -i 's|VUE_APP_C_API_KEY: process.env.VUE_APP_C_API_KEY|VUE_APP_C_API_KEY: "${{ secrets.VUE_APP_C_API_KEY }}"|g' ekisen2.html
+          sed -i "s|const secrets = { C_API_KEY: process.env.VUE_APP_C_API_KEY };|const secrets = { C_API_KEY: '$VUE_APP_C_API_KEY' };|g" ekisen2.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
