@@ -1,41 +1,50 @@
-name: Run ekisen2.html
+name: Deploy ekisen2.html to GitHub Pages
 
 on:
   push:
-    branches:
-      - master  # または使用しているデフォルトブランチ名
+    branches: ["master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy and Run HTML
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
 
-    - name: Install http-server
-      run: npm install -g http-server
+      - name: Install dependencies
+        run: npm install axios vue
 
-    - name: Run HTML file
-      run: |
-        http-server . &
-        sleep 5
-        curl http://localhost:8080/ekisen2.html > output.txt
+      - name: Process ekisen2.html
+        run: |
+          sed -i 's|https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js|https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js|g' ekisen2.html
+          sed -i 's|VUE_APP_C_API_KEY: process.env.VUE_APP_C_API_KEY|VUE_APP_C_API_KEY: "${{ secrets.VUE_APP_C_API_KEY }}"|g' ekisen2.html
 
-    - name: Debug
-      env:
-        API_KEY: ${{ secrets.VUE_APP_C_API_KEY }}
-      run: |
-        cat output.txt
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: html-output
-        path: output.txt
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
