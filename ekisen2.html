@@ -172,7 +172,7 @@
                     }
                 },
                 fetchData() {
-                    axios.get('https://mike2mike.xyz/datas_ke.json')
+                    axios.get('datas_ke.json')
                         .then(response => {
                             this.info = response.data[this.ke];
                             this.info2 = response.data[this.henke];
