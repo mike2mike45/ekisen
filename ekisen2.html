@@ -198,26 +198,26 @@
             'Content-Type': 'application/json',
             'x-api-key': API_KEY
           },
-      body: JSON.stringify({
-        model: "claude-2",
-        prompt: this.message,
-        max_tokens_to_sample: 300
-      })
-    });
+          body: JSON.stringify({
+            model: "claude-2",
+            prompt: this.message,
+            max_tokens_to_sample: 300
+           })
+        });
 
         
-    if (response.ok) {
-          const data = await response.json();
-          console.log(data.contents);
+        if (response.ok) {
+            const data = await response.json();
+            console.log(data.contents);
         } else {
           throw new Error('Network response was not ok.');
         }
-      } catch (error) {
+    } catch (error) {
         console.error('Error calling Claude API:', error);
      
-    this.answer = 'エラーが発生しました。もう一度お試しください。';
-  }
-},
+        this.answer = 'エラーが発生しました。もう一度お試しください。';
+    }
+    },
                 copyURL() {
                     navigator.clipboard.writeText(this.URLdata).then(() => {
                         alert('URLをクリップボードにコピーしました。');
